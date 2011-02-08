@@ -37,7 +37,7 @@
 		
 		$(document).click(function() {
 			page.animate({
-				top: $(window).height()-40
+				top: $(window).height()-100
 			}, 1000, 'easeOutBounce');
 			
 			setTimeout(function() {
