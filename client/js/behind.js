@@ -98,12 +98,14 @@ var Behind = function(options) {
 		(function() {
 			model.cursors		= {};
 			
-			webSocket			= new io.Socket(settings.serverUrl);
+			webSocket			= new io.Socket(settings.serverUrl, {port: 8080, rememberTransport: false});
 			webSocketService	= new WebSocketService(model, webSocket);
 			
-			webSocket.on('welcome',		webSocketService.welcomeHandler);
-			webSocket.on('update',		webSocketService.updateHandler);
+			webSocket.on('connect',		webSocketService.welcomeHandler);
+			webSocket.on('message',		webSocketService.updateHandler);
 			webSocket.on('disconnect',	webSocketService.disconnectHandler);
+			
+			webSocket.connect();
 		})();
 	};
 	
