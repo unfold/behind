@@ -13,7 +13,6 @@ var Behind = function(options) {
 		
 		this.id			= data.id;
 		this.target		= this.position	= {x: data.x,y: data.y};
-		this.cursorType = data.cursorType;
 		this.element	= $('<div/>', {'class': 'cursor'});
 		
 		this.isTimeToMove = function() {
@@ -52,6 +51,21 @@ var Behind = function(options) {
 		})();
 	};
 	
+	var UserCursor = function() {
+		var c  = this;
+		this.x = 0;
+		this.y = 0;
+		
+		var mousemove = function(e) {
+			c.x = e.clientX;
+			c.y = e.clientY;
+		};
+		
+		(function() {
+			$(document).bind('mousemove', mousemove);
+		})();
+	}
+	
 	var WebSocketService = function(model, webSocket) {
 		var webSocketService = this,
 			model = model,
@@ -60,33 +74,60 @@ var Behind = function(options) {
 		
 		this.hasConnection = false;
 		
-		this.welcomeHandler = function(data) {
-			console.log('WebSocket connection opened:', data);
+		this.onConnect = function(data) {
+			console.log('WebSocket connection opened:'. data);
 			webSocketService.hasConnection = true;
 		};
 		
-		this.updateHandler = function(data) {
-			console.log('WebSocket update recieved:', data);
+		this.onMessage = function(data) {
+			var data = $.parseJSON(data);
 			
-			var data = BehindUtils.parseCursor(data);
-			var cursor = model.cursors[data.id];
+			console.log('WebSocket message recieved:', data.type);
 			
-			// New cursor
-			if(!cursor) {
-				cursor = model.cursors[data.id] = new Cursor(data);
-			} else {
-				cursor.update(data);
+			var fn = webSocketService[data.type + 'Handler'];
+			if (fn) {
+				fn(data);
 			}
 		};
 		
-		this.disconnectHandler = function(data) {
+		this.onDisconnect = function(data) {
 			console.log('WebSocket connection closed:', data);
 			webSocketService.hasConnection = false;
 		};
 		
-		this.sendUpdate = function(cursor) {
-			console.log('Sending update on:', cursor);
-			webSocket.send(BehindUtils.serializeCursor(cursor));
+		this.welcomeHandler = function(data) {
+			console.log('User ' + data.user.id + 'logged connected.');
+		}
+		
+		this.disconnectHandler = function(data) {
+			console.log('User ' + data.user.id + 'logged connected.');
+		}
+		
+		this.updateHandler = function() {
+			console.log('Update handler');
+			
+			var cursor = model.cursors[data.user.id];
+			
+			// New cursor
+			if(!cursor) {
+				cursor = model.cursors[data.user.id] = new Cursor(data.user);
+			} else {
+				cursor.update(data);
+			}
+		}
+		
+		this.sendUpdate = function(userData) {
+			if(webSocketService.hasConnection) {
+				console.log('Sending update on:', data);
+				var sendData = {
+					type: 'update',
+					user: {
+						x: userData.x,
+						y: userData.y
+					}
+				}
+				webSocket.send(JSON.stringify(sendData));
+			}
 		}
 	};
 	
@@ -94,18 +135,25 @@ var Behind = function(options) {
 		var webSocket,
 			webSocketService,
 			model = {};
-			
+		
+		var sendUserUpdate = function(e) {
+			webSocketService.sendUpdate(model.userCursor);
+		};
+		
 		(function() {
 			model.cursors		= {};
+			model.userCursor	= new UserCursor();
 			
 			webSocket			= new io.Socket(settings.serverUrl, {port: 8080, rememberTransport: false});
 			webSocketService	= new WebSocketService(model, webSocket);
 			
-			webSocket.on('connect',		webSocketService.welcomeHandler);
-			webSocket.on('message',		webSocketService.updateHandler);
-			webSocket.on('disconnect',	webSocketService.disconnectHandler);
+			webSocket.on('connect',		webSocketService.onConnect);
+			webSocket.on('message',		webSocketService.onMessage);
+			webSocket.on('disconnect',	webSocketService.onDisconnect);
 			
 			webSocket.connect();
+			
+			$(document).bind('mousemove', $.throttle(200, sendUserUpdate));
 		})();
 	};
 	
