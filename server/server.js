@@ -16,16 +16,15 @@ socket.on('connection', function(client) {
 	console.log(client.sessionId + ' connected.');
 	
 	client.user = new User(client.sessionId);
-	client.broadcast(1 + ',' + client.sessionId);
+	//client.broadcast(JSON.stringify({type: 'welcome', user: client.user}));
 
 	client.on('message', function(message) {
-		var data = message.split(',');
-		var type = data[0];
+		var data = JSON.parse(message);
 		
-		switch (type) {
-			case 2: // Update
+		switch (data.type) {
+			case 'update':
 				client.user.update(data);
-				client.broadcast(data.type + ',', client.user.encode());
+				client.broadcast(JSON.stringify({type: 'update', user: client.user}));
 				break;
 		}
 	});
@@ -33,6 +32,6 @@ socket.on('connection', function(client) {
 	client.on('disconnect', function(message) {
 		console.log(client.sessionId + ' disconnected.');
 
-		client.broadcast(3 + ',' + client.sessionId);
+		client.broadcast(JSON.stringify({type: 'disconnect', user: client.user}));
 	});
 });
