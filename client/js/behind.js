@@ -21,7 +21,8 @@ var Behind = function(options) {
 		};
 		
 		this.update = function(data) {
-			this.target = { x: data.x,y: data.y };
+			console.log(data);
+			this.target = { x: data.position.x,y: data.position.y };
 			if(c.isTimeToMove()) {
 				moveInterval = setInterval(c.move, 30);
 			}
@@ -103,8 +104,8 @@ var Behind = function(options) {
 			console.log('User ' + data.user.id + 'logged disconnected.');
 		}
 		
-		this.updateHandler = function() {
-			console.log('Update handler');
+		this.updateHandler = function(data) {
+			console.log('Update handler', data);
 			
 			var cursor = model.cursors[data.user.id];
 			
@@ -112,20 +113,22 @@ var Behind = function(options) {
 			if(!cursor) {
 				cursor = model.cursors[data.user.id] = new Cursor(data.user);
 			} else {
-				cursor.update(data);
+				cursor.update(data.user);
 			}
 		}
 		
 		this.sendUpdate = function(userData) {
 			if(webSocketService.hasConnection) {
-				console.log('Sending update on:', data);
 				var sendData = {
 					type: 'update',
 					user: {
-						x: userData.x,
-						y: userData.y
+						position: {
+							x: userData.x,
+							y: userData.y
+						}
 					}
 				}
+				console.log('Sending update on:', sendData);
 				webSocket.send(JSON.stringify(sendData));
 			}
 		}
