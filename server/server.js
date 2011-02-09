@@ -1,6 +1,7 @@
 var fs = require('fs')
 var http = require('http')
 var io = require('../lib/socket.io')
+var User = require('./user')
 
 var server = http.createServer(function(request, response) {
 	response.writeHead(400);
