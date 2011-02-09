@@ -75,21 +75,31 @@ var Behind = function(options) {
 		this.hasConnection = false;
 		
 		this.connectHandler = function(data) {
-			console.log('WebSocket connection opened:');
+			console.log('WebSocket connection opened:'. data);
 			webSocketService.hasConnection = true;
 		};
 		
-		this.messageHandler = function(data) {
-			console.log('WebSocket update recieved:', data);
+		this.updateHandler = function() {
+			console.log('Update handler');
 			
-			var data = $.parseJSON(data);
-			var cursor = model.cursors[data.id];
+			var cursor = model.cursors[data.user.id];
 			
 			// New cursor
 			if(!cursor) {
-				cursor = model.cursors[data.id] = new Cursor(data);
+				cursor = model.cursors[data.user.id] = new Cursor(data.user);
 			} else {
 				cursor.update(data);
+			}
+		}
+		
+		this.processMessage = function(data) {
+			var data = $.parseJSON(data);
+			
+			console.log('WebSocket message recieved:', data.type);
+			
+			var fn = webSocketService[data.type + 'Handler'];
+			if (fn) {
+				fn(data);
 			}
 		};
 		
@@ -102,13 +112,13 @@ var Behind = function(options) {
 			if(webSocketService.hasConnection) {
 				console.log('Sending update on:', data);
 				var sendData = {
-					x: userData.x,
-					y: userData.y,
-					type: 'update'
+					type: 'update',
+					user: {
+						x: userData.x,
+						y: userData.y
+					}
 				}
 				webSocket.send(JSON.stringify(sendData));
-			} else {
-				console.log('Has no connection. Data not sent.')
 			}
 		}
 	};
@@ -130,7 +140,7 @@ var Behind = function(options) {
 			webSocketService	= new WebSocketService(model, webSocket);
 			
 			webSocket.on('connect',		webSocketService.connectHandler);
-			webSocket.on('message',		webSocketService.messageHandler);
+			webSocket.on('message',		webSocketService.processMessage);
 			webSocket.on('disconnect',	webSocketService.disconnectHandler);
 			
 			webSocket.connect();
