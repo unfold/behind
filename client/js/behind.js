@@ -100,7 +100,7 @@ var Behind = function(options) {
 		}
 		
 		this.disconnectHandler = function(data) {
-			console.log('User ' + data.user.id + 'logged connected.');
+			console.log('User ' + data.user.id + 'logged disconnected.');
 		}
 		
 		this.updateHandler = function() {
