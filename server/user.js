@@ -4,6 +4,6 @@ var User = exports = module.exports = function User(id) {
 }
 
 User.prototype.update = function(data) {
-	this.position.x = data.x;
-	this.position.y = data.y;
+	this.position.x = data.position.x;
+	this.position.y = data.position.y;
 }

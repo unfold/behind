@@ -23,7 +23,7 @@ socket.on('connection', function(client) {
 		
 		switch (data.type) {
 			case 'update':
-				client.user.update(data);
+				client.user.update(data.user);
 				client.broadcast(JSON.stringify({type: 'update', user: client.user}));
 				break;
 		}
