@@ -74,10 +74,34 @@ var Behind = function(options) {
 		
 		this.hasConnection = false;
 		
-		this.connectHandler = function(data) {
+		this.onConnect = function(data) {
 			console.log('WebSocket connection opened:'. data);
 			webSocketService.hasConnection = true;
 		};
+		
+		this.onMessage = function(data) {
+			var data = $.parseJSON(data);
+			
+			console.log('WebSocket message recieved:', data.type);
+			
+			var fn = webSocketService[data.type + 'Handler'];
+			if (fn) {
+				fn(data);
+			}
+		};
+		
+		this.onDisconnect = function(data) {
+			console.log('WebSocket connection closed:', data);
+			webSocketService.hasConnection = false;
+		};
+		
+		this.welcomeHandler = function(data) {
+			console.log('User ' + data.user.id + 'logged connected.');
+		}
+		
+		this.disconnectHandler = function(data) {
+			console.log('User ' + data.user.id + 'logged connected.');
+		}
 		
 		this.updateHandler = function() {
 			console.log('Update handler');
@@ -91,22 +115,6 @@ var Behind = function(options) {
 				cursor.update(data);
 			}
 		}
-		
-		this.processMessage = function(data) {
-			var data = $.parseJSON(data);
-			
-			console.log('WebSocket message recieved:', data.type);
-			
-			var fn = webSocketService[data.type + 'Handler'];
-			if (fn) {
-				fn(data);
-			}
-		};
-		
-		this.disconnectHandler = function(data) {
-			console.log('WebSocket connection closed:', data);
-			webSocketService.hasConnection = false;
-		};
 		
 		this.sendUpdate = function(userData) {
 			if(webSocketService.hasConnection) {
@@ -139,9 +147,9 @@ var Behind = function(options) {
 			webSocket			= new io.Socket(settings.serverUrl, {port: 8080, rememberTransport: false});
 			webSocketService	= new WebSocketService(model, webSocket);
 			
-			webSocket.on('connect',		webSocketService.connectHandler);
-			webSocket.on('message',		webSocketService.processMessage);
-			webSocket.on('disconnect',	webSocketService.disconnectHandler);
+			webSocket.on('connect',		webSocketService.onConnect);
+			webSocket.on('message',		webSocketService.onMessage);
+			webSocket.on('disconnect',	webSocketService.onDisconnect);
 			
 			webSocket.connect();
 			
