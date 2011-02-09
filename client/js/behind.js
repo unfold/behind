@@ -98,8 +98,12 @@ var Behind = function(options) {
 		(function() {
 			model.cursors		= {};
 			
-			// webSocket			= new io.Socket(settings.serverUrl);
-			// webSocketService	= new WebSocketService(model, webSocket);
+			webSocket			= new io.Socket(settings.serverUrl);
+			webSocketService	= new WebSocketService(model, webSocket);
+			
+			webSocket.on('welcome',		webSocketService.welcomeHandler);
+			webSocket.on('update',		webSocketService.updateHandler);
+			webSocket.on('disconnect',	webSocketService.disconnectHandler);
 		})();
 	};
 	
